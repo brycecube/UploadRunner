@@ -1,70 +1,84 @@
 (function(w, d){
-  var RunkeeperMonthly = function RunkeeperMonthly(username) {
+  console.clear();
+  var RunkeeperMonthly = function RunkeeperMonthly() {
     if (!(this instanceof RunkeeperMonthly))
-      return new RunkeeperMonthly(username);
+      return new RunkeeperMonthly();
 
     var self = this;
-    self.username = username; //dynamic username per page
     self.init(); //fire this biatch
   };
 
+  /*
+  * Functionality to loop through and fire all monthly calcs
+  */
   RunkeeperMonthly.prototype = {
     /*
-    * Responsible for making the AJAX call that gathers all the events per month
+    * gets all the dom elements per month
     */
-    gatherData: function(date) {
-      var self = this,
-          dateSplit = date.split('-'),
-          month = dateSplit[0],
-          year = dateSplit[2];
+    getDates: function() {
+      var self = this;
+      var i, actLen, activity;
 
-      var url = siteLocation + '/activitiesByDateRange?userName=' + self.username + '&startDate=' + date;
+      for (i = 0, actLen = activities.length; i < actLen; i++) {
+        activity = activities[i];
+        calcRkMonth(activity, activity.dataset.date);
+      }
+    },
+
+    /*
+    * fires getDates, which collects all dates
+    */
+    init: function() {
+      var self = this;
+      self.getDates();
+    }
+  };
+
+
+  /*
+  * Class for each month calculation and appending
+  */
+  var calcRkMonth = function calcRkMonth(el, date) {
+    if (!(this instanceof calcRkMonth))
+      return new calcRkMonth(el, date);
+
+    var self = this;
+
+    var splitDate = date.split('-');
+    self.date = date;
+    self.month = splitDate[0];
+    self.year = splitDate[2];
+    self.element = el;
+    self.username = user;
+
+    self.init(el, date);
+  };
+
+  calcRkMonth.prototype = {
+    /*
+    * fire apiCall with data
+    */
+    init: function() {
+      var self = this;
+      self.apiCall();
+    },
+
+    /*
+    * makes the API call to get info
+    */
+    apiCall: function() {
+      var self = this;
+      var url = siteLocation + '/activitiesByDateRange?userName=' + self.username + '&startDate=' + self.date;
+
       $.getJSON(url, function(r){
-        self.calculate(r.activities[year][month], date);
+          self.calculate(r.activities[self.year][self.month]);
       });
     },
 
     /*
-    * Appends the calculated monthly total to the page
+    * calculates that month
     */
-    append: function(date, monthTotal) {
-      var self = this;
-      var monthDom = d.querySelectorAll("[data-date=" + date + "]");
-      monthDom[0].innerHTML += '<span style="font-size:10px;font-weight:bold;color:#888">' + monthTotal + 'mi </span>';
-    },
-
-    /*
-    * Loops through all dom objects and gathers the data-date value of each month.
-    * This arary is later used to append elements to the DOM
-    */
-    getDates: function() {
-      var self = this;
-      var i, actLen, actDate, actDates = [];
-
-      for (i = 0, actLen = activities.length; i < actLen; i++) {
-        actDate = activities[i].dataset.date;
-        actDates.push(actDate);
-      }
-
-      self.coalate(actDates);
-    },
-
-    /*
-    * rolls through the getDates array and fires the function that gets monthly data
-    */
-    coalate: function(dates) {
-      var self = this;
-      var i, actDateLen;
-
-      for (i = 0, actDateLen = dates.length; i < actDateLen; i++) {
-        self.gatherData(dates[i]);
-      }
-    },
-
-    /*
-    * calculates all the distance values of an individual month
-    */
-    calculate: function(data, date) {
+    calculate: function(data) {
       var self = this;
       var i, dataLen, day, totalDistance = 0;
 
@@ -74,23 +88,22 @@
       }
 
       totalDistance = Math.round(totalDistance*100)/100;
-
-      self.append(date, totalDistance);
+      self.append(totalDistance);
     },
 
     /*
-    * fires getDates, which collects all dates
-    * I may re-code the class to instantiate on each month
+    * Appends the calculated monthly total to the page
     */
-    init: function() {
+    append: function(monthTotal) {
       var self = this;
-      self.getDates();
+      self.element.innerHTML += '<span style="font-size:10px;font-weight:bold;color:#888">' + monthTotal + 'mi </span>';
     }
   };
 
   var activities = $('#activityHistoryMenu').children('div.accordion'),
-      winLoc = w.location,
-      siteLocation = winLoc.origin,
-      user = winLoc.pathname.split('/')[2];
-  var rkCalc = RunkeeperMonthly(user);
+      windowLocation = w.location,
+      siteLocation = windowLocation.origin,
+      user = windowLocation.pathname.split('/')[2];
+
+  var rkCalc = RunkeeperMonthly();
 }(window, document));
