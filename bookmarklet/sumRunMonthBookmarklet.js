@@ -20,8 +20,10 @@
       var i, actLen, activity;
 
       for (i = 0, actLen = activities.length; i < actLen; i++) {
-        activity = activities[i];
-        calcRkMonth(activity, activity.dataset.date);
+        activity = activities[i] || null;
+        if (activity) {
+          calcRkMonth(activity);
+        }
       }
     },
 
@@ -34,41 +36,41 @@
     }
   };
 
-
   /*
   * Class for each month calculation and appending
   */
-  var calcRkMonth = function calcRkMonth(el, date) {
+  var calcRkMonth = function calcRkMonth(el) {
     if (!(this instanceof calcRkMonth))
-      return new calcRkMonth(el, date);
+      return new calcRkMonth(el);
 
     var self = this;
 
-    var splitDate = date.split('-');
-    self.date = date;
+    self.element = el;
+    self.date = el.dataset.date || null;
+    var splitDate = self.date.split('-');
     self.month = splitDate[0];
     self.year = splitDate[2];
-    self.element = el;
-    self.username = user;
 
-    self.init(el, date);
+    if (self.date) {
+      self.init(el);
+    }
   };
 
   calcRkMonth.prototype = {
     /*
-    * fire apiCall with data
+    * fire getData with data
     */
     init: function() {
       var self = this;
-      self.apiCall();
+      self.getData();
     },
 
     /*
     * makes the API call to get info
     */
-    apiCall: function() {
+    getData: function() {
       var self = this;
-      var url = siteLocation + '/activitiesByDateRange?userName=' + self.username + '&startDate=' + self.date;
+      var url = siteLocation + '/activitiesByDateRange?userName=' + user + '&startDate=' + self.date;
 
       $.getJSON(url, function(r){
           self.calculate(r.activities[self.year][self.month]);
@@ -106,4 +108,5 @@
       user = windowLocation.pathname.split('/')[2];
 
   var rkCalc = RunkeeperMonthly();
+
 }(window, document));
